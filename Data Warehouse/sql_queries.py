@@ -33,10 +33,10 @@ CREATE TABLE staging_events (
     registration VARCHAR,
     session_id BIGINT,
     song_title VARCHAR,
-    status INT,
+    status INTEGER,
     ts BIGINT,
-    user_agent TEXT,
-    user_id INT
+    user_agent VARCHAR,
+    user_id INTEGER
 );
 """)
 
@@ -51,7 +51,7 @@ CREATE TABLE staging_songs (
     artist_name VARCHAR,
     title VARCHAR,
     duration FLOAT,
-    year INT
+    year INTEGER
 );
 """)
 
@@ -59,13 +59,13 @@ songplay_table_create = ("""
 CREATE TABLE songplays (
     songplay_id BIGINT IDENTITY(0,1) PRIMARY KEY,
     start_time TIMESTAMP NOT NULL,
-    user_id INT NOT NULL,
+    user_id INTEGER NOT NULL,
     level VARCHAR,
     song_id VARCHAR,
     artist_id VARCHAR,
     session_id BIGINT,
     location VARCHAR,
-    user_agent TEXT
+    user_agent VARCHAR
 );
 """)
 
@@ -84,7 +84,7 @@ CREATE TABLE songs (
     song_id VARCHAR PRIMARY KEY,
     title VARCHAR,
     artist_id VARCHAR NOT NULL,
-    year INT,
+    year INTEGER,
     duration FLOAT
 );
 """)
@@ -102,12 +102,12 @@ CREATE TABLE artists (
 time_table_create = ("""
 CREATE TABLE time (
     start_time TIMESTAMP PRIMARY KEY,
-    hour INT,
-    day INT,
-    week INT,
-    month INT,
-    year INT,
-    weekday INT
+    hour INTEGER,
+    day INTEGER,
+    week INTEGER,
+    month INTEGER,
+    year INTEGER,
+    weekday INTEGER
 );
 """)
 
@@ -116,15 +116,15 @@ CREATE TABLE time (
 staging_events_copy = ("""
 COPY staging_events FROM {}
 CREDENTIALS 'aws_iam_role={}'
-FORMAT AS JSON 'auto'
-region 'us-west-2';
+JSON {}
+COMPUPDATE OFF REGION 'us-west-2';
 """).format(config.get('S3', 'LOG_DATA'), config.get('IAM_ROLE', 'ARN'), config.get('S3', 'LOG_JSONPATH'))
 
 staging_songs_copy = ("""
 COPY staging_songs FROM {}
 CREDENTIALS 'aws_iam_role={}'
 FORMAT AS JSON 'auto'
-region 'us-west-2';
+COMPUPDATE OFF REGION 'us-west-2';
 """).format(config.get('S3', 'SONG_DATA'), config.get('IAM_ROLE', 'ARN'))
 
 # FINAL TABLES
