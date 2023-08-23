@@ -2,20 +2,43 @@ import configparser
 import psycopg2
 from sql_queries import create_table_queries, drop_table_queries
 
-
 def drop_tables(cur, conn):
+    """
+    Drops each table using the queries in `drop_table_queries` list.
+    
+    Parameters:
+        - cur: psycopg2 cursor object. The cursor object to execute the DROP TABLE commands.
+        - conn: psycopg2 connection object. The connection to the database instance.
+        
+    Returns:
+        None
+    """
     for query in drop_table_queries:
         cur.execute(query)
         conn.commit()
 
-
 def create_tables(cur, conn):
+    """
+    Creates each table using the queries in `create_table_queries` list.
+    
+    Parameters:
+        - cur: psycopg2 cursor object. The cursor object to execute the CREATE TABLE commands.
+        - conn: psycopg2 connection object. The connection to the database instance.
+        
+    Returns:
+        None
+    """
     for query in create_table_queries:
         cur.execute(query)
         conn.commit()
 
-
 def main():
+    """
+    - Establishes connection with the Redshift database and gets cursor to it. 
+    - Drops all the tables.
+    - Creates all tables needed.
+    - Finally, closes the connection.
+    """
     config = configparser.ConfigParser()
     config.read('dwh.cfg')
 
@@ -26,7 +49,6 @@ def main():
     create_tables(cur, conn)
 
     conn.close()
-
 
 if __name__ == "__main__":
     main()
