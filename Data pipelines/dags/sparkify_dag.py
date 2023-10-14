@@ -14,6 +14,8 @@ from helpers import SqlQueries
 default_args = {
     'owner': 'udacity',
     'start_date': datetime(2019, 1, 12),
+    'retries': 3,
+    'retry_delay': timedelta(minutes=5),
     'depends_on_past': False,
     'catchup': False,
     'email_on_retry': False
@@ -21,7 +23,8 @@ default_args = {
 
 dag = DAG('sparkify_dag',
           default_args=default_args,
-          description='Load and transform data in Redshift with Airflow'
+          description='Load and transform data in Redshift with Airflow',
+          schedule_interval='0 * * * *'
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
@@ -44,7 +47,7 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     aws_credentials_id='aws_credentials',
     table='staging_songs',
     s3_bucket='haint84',
-    s3_key='song-data/A/A/A/',  # adjust accordingly
+    s3_key='song-data/',  # adjust accordingly
     json_format='auto'  # or the path to your JSONPath file, if not using 'auto'
 )
 
@@ -92,11 +95,27 @@ load_time_dimension_table = LoadDimensionOperator(
     insert_mode='overwrite'  # or 'append'
 )
 
+table_checks = [
+    {'table': 'users', 'min_records': 1},
+    {'table': 'songs', 'min_records': 1}, 
+    {'table': 'artists', 'min_records': 1}, 
+    {'table': 'time', 'min_records': 1},
+    {'table': 'songplays', 'min_records': 1}
+]
+
+dq_checks = [
+    {'check_sql': "SELECT COUNT(*) FROM users WHERE userid is null", 'expected_result': 0},
+    {'check_sql': "SELECT COUNT(*) FROM songs WHERE songid is null", 'expected_result': 0},
+    {'check_sql': "SELECT COUNT(*) FROM artists WHERE artistid is null", 'expected_result': 0},
+    {'check_sql': "SELECT COUNT(*) FROM time WHERE start_time is null", 'expected_result': 0},
+    {'check_sql': "SELECT COUNT(*) FROM songplays WHERE playid is null", 'expected_result': 0}
+]
+
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
-    dag=dag,
-    redshift_conn_id='your_redshift_conn',
-    tables=['songplays', 'users', 'songs', 'artists', 'time'],
+    redshift_conn_id='redshift',
+    table_checks=table_checks,
+    dq_checks=dq_checks
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
